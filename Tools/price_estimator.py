@@ -12,7 +12,7 @@ def my_newton(f, df, x0, tol):
 if __name__ == "__main__":
     # Price to pay = 1.25(((spot+nettwork_fee)-(avg_price-0.7)*0.9)*kwt) + fixed_network_fee
     kwt = 3000 #kWh             Forbruk over en måned (vilkårlig eksempel)
-    avg_price = 2 #Kr/kWh       Gjennomsnittlig pris i en gitt sone
+    avg_price = 1.5 #Kr/kWh       Gjennomsnittlig pris i en gitt sone
     network_fee = 0.4 #Kr/kWh   Nettleie i en gitt sone på nattetid
     fixed_network_fee = 450 #Kr Nettleie ut fra maks belastning
 
