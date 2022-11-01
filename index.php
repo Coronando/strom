@@ -70,8 +70,8 @@ function fetch_and_parse_data_by_date($date){
 
     return $parsed_data;
 }
-//Check if the time is after 13:00
-if($date->format("H") > 13){
+//Check if the hour is after 13 and minutes are more then 05
+if($date->format("H") >= 13 && $date->format("i") > 05){
     $first_day = fetch_and_parse_data_by_date($today);
     $second_day = fetch_and_parse_data_by_date($tomorrow);
     //Make corresponding dates
