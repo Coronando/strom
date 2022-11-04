@@ -1,4 +1,7 @@
 <?php
+//Requires and includes
+require("core_functions.php");
+
 //Takes inn two get parameters date and zone
 //Returns the data for the given date and zone
 //If no date is given, it will return the data for today
@@ -21,32 +24,43 @@ if($_GET['access_key'] != $ACCESS_TOKEN){
     exit();
 }
 
-//Get the date and zone from the get parameters
-$date = $_GET["date"];
-$zone = $_GET["zone"];
-
-
-//If no date is given, set the date to today
-if($date == ""){
-    $date = date("Y-m-d");
+//Get the date and check it's validity
+if(!isset($_GET["date"])){
+    $date = new DateTime();
+    $date = $date->format("d.m.Y");
 }
-//Check if the date is valid, if not, set it to today
-if(!checkdate(date("m", strtotime($date)), date("d", strtotime($date)), date("Y", strtotime($date)))){
-    $date = date("Y-m-d");
+else{
+    //Check if the date is valid
+    $date = DateTime::createFromFormat("d.m.Y", $_GET["date"]);
+    if($date == false){
+        $date = new DateTime();
+        $date = $date->format("d.m.Y");
+    }
+    else{
+        $date = $date->format("d.m.Y");
+    }
 }
 
+
+// NB: Zones do not currently work as expected in the fetch_and_parse_data_by_date_and_zone function. This is because
+// the link is not so easy to parse. This will be fixed in the future.
 $valid_zones = ["N01", "N02", "N03","N04","N05"];
-//Check if zone is given, if not, set it to zone N02
-if($zone == ""){
-    $zone = "N02";
-}  
-//Check if the zone is valid, if not, set it to zone N02
-if(!in_array($zone, $valid_zones)){
+//Check and validate the zone
+if(!isset($_GET["zone"])){
     $zone = "N02";
 }
+else{
+    if(in_array($_GET["zone"], $valid_zones)){
+        $zone = $_GET["zone"];
+    }
+    else{
+        $zone = "N02";
+    }
+}
 
-
-
+//Get the data for the given date and zone
+$data = fetch_and_parse_data_by_date_and_zone($date, $zone);
+print((string)$data)
 
 
 ?>
