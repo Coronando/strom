@@ -8,9 +8,16 @@
 //If the zone is not a valid zone, it will return the data for zone N02
 //If the date is not a valid date and the zone is not a valid zone, it will return the data for today and zone 1
 
+//If there is not given an access key, it will return an error message
+if(!isset($_GET['access_key'])){
+    echo "Error: No access key given";
+    exit();
+}
+
 //Get the date and zone from the get parameters
 $date = $_GET["date"];
 $zone = $_GET["zone"];
+
 
 //If no date is given, set the date to today
 if($date == ""){
@@ -31,6 +38,7 @@ if($zone == ""){
 if(!in_array($zone, $valid_zones)){
     $zone = "N02";
 }
+
 
 
 
