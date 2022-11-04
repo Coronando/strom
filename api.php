@@ -8,13 +8,13 @@
 //If the zone is not a valid zone, it will return the data for zone N02
 //If the date is not a valid date and the zone is not a valid zone, it will return the data for today and zone 1
 
+
 //If there is not given an access key, it will return an error message
 if(!isset($_GET['access_key'])){
     echo "Error: No access key given";
     exit();
 }
 //Check if the key corresponds with ACCESS_TOKEN form the config.json file
-
 $ACCESS_TOKEN = json_decode(file_get_contents("config.json"), true)['ACCESS_TOKEN'];
 if($_GET['access_key'] != $ACCESS_TOKEN){
     echo "Error: Wrong access key";
