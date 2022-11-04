@@ -1,7 +1,8 @@
 <?php
 
 //All the fetching and parsing is in a function so it can be called again
-function fetch_and_parse_data_by_date($date){
+function fetch_and_parse_data_by_date_and_zone($date, $zone="N02"){
+    //NB: Zone does not work as expecte with the link below, the zone is therefore unused at this time
     //Link to data with from the N02 price zone.
     $url='https://transparency.entsoe.eu/transmission-domain/r2/dayAheadPrices/show?name=&defaultValue=false&viewType=GRAPH&areaType=BZN&atch=false&dateTime.dateTime=' . strval($date) . '+00:00|CET|DAY&biddingZone.values=CTY|10YNO-0--------C!BZN|10YNO-2--------T&resolution.values=PT15M&resolution.values=PT30M&resolution.values=PT60M&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)';
     
