@@ -35,7 +35,6 @@ if(!checkdate(date("m", strtotime($date)), date("d", strtotime($date)), date("Y"
     $date = date("Y-m-d");
 }
 
-
 $valid_zones = ["N01", "N02", "N03","N04","N05"];
 //Check if zone is given, if not, set it to zone N02
 if($zone == ""){
