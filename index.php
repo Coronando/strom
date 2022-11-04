@@ -1,5 +1,4 @@
 <?php
-
 //Sort out dates. The next day can be retrieved after 14:00
 $date = new DateTime();
 $interval = new DateInterval('P1D');
@@ -91,7 +90,57 @@ else{
     $second_day_date_string = "Today";
 }
 
+# Function to get the average price for a given months so far.
+function get_a_months_avererage_price($month){
+    //Find todays day
+    $date = new DateTime();
 
+    $month = strval($month);
+    $month = str_pad($month, 2, "0", STR_PAD_LEFT);
+    // If the month is this month, get the average price for the month so far.
+    if($month == $date->format("m")){
+        $day = $date->format("d");
+    }
+    // If the month is not this month, find how many days there are in the month.
+    if($month != $date->format("m")){
+        $day = cal_days_in_month(CAL_GREGORIAN, (int)$month, $date->format("Y"));
+    } 
+
+    //Make an array of all the days in the month (or month so far)
+    $days = array();
+    for($i = 1; $i <= $day; $i++){
+        $i = str_pad($i, 2, "0", STR_PAD_LEFT);
+        $days[] = $i;
+    }
+    //Make an array of all the prices for month (or month so far)
+    $prices = array();
+    foreach($days as $day){
+        $date_to_fetch = $day . "-" . $month . "-" . $date->format("Y");
+        $price = fetch_and_parse_data_by_date($date_to_fetch);
+        print($price);
+        //$price = json_decode($price, true);
+        // Add the price to the array
+        //var_dump($price);
+        //echo $prices[(int)$day];
+    }
+    //var_dump($prices);
+    //echo "Hello";
+
+    //Find the average price
+    // $total = 0;
+    // $count = 0;
+    // foreach($prices as $price){
+    //     print($price);
+    //     /*if($price != 0){
+    //         $total = $total + $price;
+    //         $count = $count + 1;
+    //     }*/
+    // }
+    $average = 1;
+    //$average = $total / $count;
+    return $average;
+}
+//$average = get_a_months_avererage_price("11");
 
 
 
