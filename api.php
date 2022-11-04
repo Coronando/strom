@@ -13,6 +13,13 @@ if(!isset($_GET['access_key'])){
     echo "Error: No access key given";
     exit();
 }
+//Check if the key corresponds with ACCESS_TOKEN form the config.json file
+
+$ACCESS_TOKEN = json_decode(file_get_contents("config.json"), true)['ACCESS_TOKEN'];
+if($_GET['access_key'] != $ACCESS_TOKEN){
+    echo "Error: Wrong access key";
+    exit();
+}
 
 //Get the date and zone from the get parameters
 $date = $_GET["date"];
