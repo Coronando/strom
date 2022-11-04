@@ -14,7 +14,7 @@ $tomorrow = $tomorrow->format("d.m.Y");
 $today = $date->format("d.m.Y");
 
 //All the fetching and parsing is in a function so it can be called again
-function fetch_and_parse_data_by_date($date){
+function fetch_and_parse_data_by_date_and_zone($date){
     //Link to data with from the N02 price zone.
     $url='https://transparency.entsoe.eu/transmission-domain/r2/dayAheadPrices/show?name=&defaultValue=false&viewType=GRAPH&areaType=BZN&atch=false&dateTime.dateTime=' . strval($date) . '+00:00|CET|DAY&biddingZone.values=CTY|10YNO-0--------C!BZN|10YNO-2--------T&resolution.values=PT15M&resolution.values=PT30M&resolution.values=PT60M&dateTime.timezone=CET_CEST&dateTime.timezone_input=CET+(UTC+1)+/+CEST+(UTC+2)';
     
@@ -71,8 +71,8 @@ function fetch_and_parse_data_by_date($date){
     return $parsed_data;
 }
 
-$today_data = fetch_and_parse_data_by_date($today);
-$tomorrow_data = fetch_and_parse_data_by_date($tomorrow);
+$today_data = fetch_and_parse_data_by_date_and_zone($today);
+$tomorrow_data = fetch_and_parse_data_by_date_and_zone($tomorrow);
 
 
 
