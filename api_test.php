@@ -13,7 +13,7 @@ $ACCESS_TOKEN = json_decode(file_get_contents("config.json"), true)['ACCESS_TOKE
 $date = "01.01.2022";
 $zone = "N02";
 if($DEBUG){
-    $url = "http://localhost:3000/api.php?access_key=$ACCESS_TOKEN&date=$date&zone=$zone";
+    $url = "http://localhost:3000/api.php?access_key=" . $ACCESS_TOKEN . "&date=" . $date . "&zone=" . $zone;
 }
 // else{
 //     $url = "https://strom.tangane.no/api.php?access_key=$ACCESS_TOKEN&date=$date&zone=$zone";
