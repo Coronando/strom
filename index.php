@@ -5,7 +5,7 @@ include 'fetch_data.php';
 loadEnv(__DIR__ . '/.env');
 // Now you can access the API key using getenv()
 $apiKey = getenv('API_KEY');
-$prices = getPricesForTodayAndTomorrow($apiKey);
+$prices = getUpdatedPrices($apiKey);
 
 // Function to remove the "_id" key from the data array
 function removeIdKey($data) {
@@ -19,13 +19,44 @@ function removeIdKey($data) {
     return $data;
 }
 
+// Function to apply 25% tax to all price-related fields
+function applyTax($data) {
+    if (is_array($data)) {
+        foreach ($data as &$item) {
+            // Apply 25% tax to each price in the dailyPriceArray
+            if (isset($item['dailyPriceArray'])) {
+                $item['dailyPriceArray'] = array_map(fn($price) => $price * 1.25, $item['dailyPriceArray']);
+            }
+            // Apply 25% tax to the relevant metrics
+            $item['dailyPriceAverage'] = $item['dailyPriceAverage'] * 1.25;
+            $item['dailyPriceMax'] = $item['dailyPriceMax'] * 1.25;
+            $item['dailyPriceMin'] = $item['dailyPriceMin'] * 1.25;
+            if (isset($item['dailyPriceAverageWithSupport'])) {
+                $item['dailyPriceAverageWithSupport'] = $item['dailyPriceAverageWithSupport'] * 1.25;
+            }
+            if (isset($item['dailyPriceMaxWithSupport'])) {
+                $item['dailyPriceMaxWithSupport'] = $item['dailyPriceMaxWithSupport'] * 1.25;
+            }
+            if (isset($item['dailyPriceMinWithSupport'])) {
+                $item['dailyPriceMinWithSupport'] = $item['dailyPriceMinWithSupport'] * 1.25;
+            }
+        }
+    }
+    return $data;
+}
+
 // Remove the "_id" key from the data arrays
 $day1 = removeIdKey($prices['today']);
 $day2 = isset($prices['tomorrow']) ? removeIdKey($prices['tomorrow']) : removeIdKey($prices['yesterday']);
 
+// Apply 25% tax to the data arrays
+$day1 = applyTax($day1);
+$day2 = applyTax($day2);
+
 // Since $day1 and $day2 are arrays with one element, flatten them
 $day1 = $day1[0];
 $day2 = $day2[0];
+
 ?>
 
 <!DOCTYPE html>
@@ -68,26 +99,40 @@ $day2 = $day2[0];
             { name: 'dailyPriceMinWithSupport', nickname: 'Min (with support)' },
         ];
 
+        // Get today's date in 'YYYY-MM-DD' format
         const today = new Date().toISOString().split('T')[0];
+
+        // Get the dates for day1 and day2 in 'YYYY-MM-DD' format
         const firstDayDate = new Date(day1.date).toISOString().split('T')[0];
         const secondDayDate = new Date(day2.date).toISOString().split('T')[0];
 
+        // Check if today is the first day
         const isTodayFirstDay = firstDayDate === today;
-        const isTomorrowFirstDay = new Date(firstDayDate).getTime() > new Date(today).getTime();
 
+        // Check if the first day is in the future (i.e., tomorrow or later)
+        const isFirstDayInFuture = new Date(firstDayDate).getTime() > new Date(today).getTime();
+
+        // Initialize variables for left and right days and their labels
         let leftDay, rightDay;
         let leftDayLabel, rightDayLabel;
 
-        if (isTomorrowFirstDay) {
+        if (isFirstDayInFuture) {
             leftDay = day2;
             rightDay = day1;
-            leftDayLabel = 'Yesterday\'s';
-            rightDayLabel = 'Tomorrow\'s';
+            leftDayLabel = "Yesterday's";
+            rightDayLabel = "Tomorrow's";
         } else {
-            leftDay = isTodayFirstDay ? day2 : day1;
-            rightDay = isTodayFirstDay ? day1 : day2;
-            leftDayLabel = isTodayFirstDay ? 'Yesterday\'s' : 'Today\'s';
-            rightDayLabel = isTodayFirstDay ? 'Today\'s' : 'Tomorrow\'s';
+            if (!isTodayFirstDay) {
+                leftDay = day2;
+                rightDay = day1;
+                leftDayLabel = "Yesterday's";
+                rightDayLabel = "Today's";
+            } else {
+                rightDay = day2;
+                leftDay = day1;
+                leftDayLabel = "Today's";
+                rightDayLabel = "Tomorrow's";
+            }
         }
 
         document.getElementById('left-day-label').textContent = leftDayLabel;
@@ -178,6 +223,9 @@ $day2 = $day2[0];
         }
         Chart.defaults.font.size = 30;
 
+
+        console.log(leftDay);
+        console.log(rightDay);
         // Create charts
         createChart(document.getElementById('leftDayChart').getContext('2d'), leftDay.dailyPriceArray, leftDayLabel);
         createChart(document.getElementById('rightDayChart').getContext('2d'), rightDay.dailyPriceArray, rightDayLabel);
