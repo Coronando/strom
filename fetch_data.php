@@ -98,4 +98,4 @@ loadEnv(__DIR__ . '/.env');
 $apiKey = getenv('API_KEY');
 $prices = getPricesForTodayAndTomorrow($apiKey);
 
-print_r($prices);
+//print_r($prices);
