@@ -1,180 +1,224 @@
 <?php
-//Includes and requires
-require("core_functions.php");
+// Include the fetch_data.php script to ensure data is fetched and files are created
+include 'fetch_data.php';
+// Load the .env file
+loadEnv(__DIR__ . '/.env');
+// Now you can access the API key using getenv()
+$apiKey = getenv('API_KEY');
+$prices = getPricesForTodayAndTomorrow($apiKey);
 
-//Sort out dates. The next day can be retrieved after 14:00
-$date = new DateTime();
-$interval = new DateInterval('P1D');
-
-$yesterday = new $date;
-$yesterday->sub($interval);
-$yesterday = $yesterday->format("d.m.Y");
-$tomorrow = new $date;
-$tomorrow->add($interval);
-$tomorrow = $tomorrow->format("d.m.Y");
-
-$today = $date->format("d.m.Y");
-
-
-//Check if the hour is after 13 and minutes are more then 05
-if($date->format("H") >= 13 && $date->format("i") > 05){
-    $first_day = fetch_and_parse_data_by_date_and_zone($today);
-    $second_day = fetch_and_parse_data_by_date_and_zone($tomorrow);
-    //Make corresponding dates
-    $first_day_date = $today;
-    $second_day_date = $tomorrow;
-    $first_day_date_string = "Today";
-    $second_day_date_string = "Tomorrow";
-
-}
-else{
-    $first_day = fetch_and_parse_data_by_date_and_zone($yesterday);
-    $second_day = fetch_and_parse_data_by_date_and_zone($today);
-    //Make corresponding dates
-    $first_day_date = $yesterday;
-    $second_day_date = $today;
-    $first_day_date_string = "Yesterday";
-    $second_day_date_string = "Today";
-}
-
-//Simple html part under this:
-?>
-<!DOCTYPE html>
-<html>
-<head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.min.js"></script>
-    <style>
-        body{
-            background-color: #B2B2B2;
-            width: 100%;
-            text-align: center;
-        }
-        nav{
-            background-color: #00ABB3;
-            height: 50px;
-        }
-        div{
-            text-align: center;
-        }
-        canvas {
-            padding: 0;
-            margin: auto;
-            display: block;
-            width: 80% !important;
-            height: 50vh !important;
-            background-color: #EAEAEA;
-        }
-    </style>
-</head>
-<body>
-    <h1> Strømpriser </h1>
-    <p>Yesterday: <?php echo $yesterday; ?>.</p>
-    <p>Today: <?php echo $today; ?>.</p>
-    <p>Tomorrow: <?php echo $tomorrow; ?>.</p>
-    <div>
-        <canvas id="myChart"></canvas>
-    </div>
-</body>
-<script>
-    //Get the data from php
-    var jsonfile_day1 = {
-        "jsonarray": <?php echo $first_day; ?>
-    };
-    var jsonfile_day2 = {
-        "jsonarray": <?php echo $second_day; ?>
-    };
-    //combine the two arrays
-    var jsonfile = jsonfile_day1.jsonarray.concat(jsonfile_day2.jsonarray);
-    console.log(jsonfile);
-    //Make labels for the x and y axis
-    var labels = [];
-    var data = [];
-    //Loop through the array and add the data to the labels and data arrays
-    for(var i = 0; i < jsonfile.length; i++){
-        labels.push(jsonfile[i].x);
-        data.push(jsonfile[i].y);
-    }
-
-    const verticalLinePlugin = {
-        getLinePosition: function (chart, pointIndex) {
-            const meta = chart.getDatasetMeta(0); // first dataset is used to discover X coordinate of a point
-            const data = meta.data;
-            return data[pointIndex]._model.x;
-        },
-        renderVerticalLine: function (chartInstance, pointIndex) {
-            const lineLeftOffset = this.getLinePosition(chartInstance, pointIndex);
-            const scale = chartInstance.scales['y-axis-0'];
-            const context = chartInstance.chart.ctx;
-
-            // render vertical line
-            context.beginPath();
-            context.strokeStyle = '#000000';
-            context.moveTo(lineLeftOffset, scale.top);
-            context.lineTo(lineLeftOffset, scale.bottom);
-            context.stroke();
-
-            // write label
-            context.fillStyle = "#000000";
-            context.textAlign = 'right';
-            context.fillText('<?php echo $first_day_date ?>', lineLeftOffset-10, (scale.bottom - scale.top) / 10 + scale.top);
-            context.fillText('<?php echo $first_day_date_string ?>', lineLeftOffset-10, (scale.bottom - scale.top) / 10 + scale.top-23);
-            context.textAlign = 'left';
-            context.fillText('<?php echo $second_day_date ?>', lineLeftOffset+10, (scale.bottom - scale.top) / 10 + scale.top);
-            context.fillText('<?php echo $second_day_date_string ?>', lineLeftOffset+10, (scale.bottom - scale.top) / 10 + scale.top-23);
-
-        },
-
-        afterDatasetsDraw: function (chart, easing) {
-            if (chart.config.lineAtIndex) {
-                chart.config.lineAtIndex.forEach(pointIndex => this.renderVerticalLine(chart, pointIndex));
+// Function to remove the "_id" key from the data array
+function removeIdKey($data) {
+    if (is_array($data)) {
+        foreach ($data as &$item) {
+            if (isset($item['_id'])) {
+                unset($item['_id']);
             }
         }
-    };
+    }
+    return $data;
+}
 
+// Remove the "_id" key from the data arrays
+$day1 = removeIdKey($prices['today']);
+$day2 = isset($prices['tomorrow']) ? removeIdKey($prices['tomorrow']) : removeIdKey($prices['yesterday']);
 
-    //Get the canvas elements
-    var ctx = document.getElementById("myChart").getContext('2d');
-    
-    var config = {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Strømpris gjennom dagen: <?php echo $first_day_date . " and " . $second_day_date; ?> sone NO2',
-                data: data,
-                backgroundColor: 'rgba(0, 119, 204, 0.3)'
-            }]
-        },
-        lineAtIndex: [24],
-        plugins: [verticalLinePlugin],
-        options: {
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: {
-                        // This more specific font property overrides the global property
-                        font: {
-                            size: 25
+// Since $day1 and $day2 are arrays with one element, flatten them
+$day1 = $day1[0];
+$day2 = $day2[0];
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electricity Prices</title>
+    <!-- Add the plot_styling.css -->
+    <link rel="stylesheet" href="plot_styling.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Electricity Prices</h1>
+        <div class="charts">
+            <div class="chart-container" id="left-chart-container">
+                <h2 id="left-day-label"></h2>
+                <canvas id="leftDayChart"></canvas>
+                <div id="left-summary" class="summary"></div>
+            </div>
+            <div class="chart-container" id="right-chart-container">
+                <h2 id="right-day-label"></h2>
+                <canvas id="rightDayChart"></canvas>
+                <div id="right-summary" class="summary"></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const day1 = <?php echo json_encode($day1); ?>;
+        const day2 = <?php echo json_encode($day2); ?>;
+
+        const metrics = [
+            { name: 'dailyPriceAverage', nickname: 'Average' },
+            { name: 'dailyPriceMax', nickname: 'Max' },
+            { name: 'dailyPriceMin', nickname: 'Min' },
+            // With support
+            { name: 'dailyPriceAverageWithSupport', nickname: 'Average (with support)' },
+            { name: 'dailyPriceMaxWithSupport', nickname: 'Max (with support)' },
+            { name: 'dailyPriceMinWithSupport', nickname: 'Min (with support)' },
+        ];
+
+        const today = new Date().toISOString().split('T')[0];
+        const firstDayDate = new Date(day1.date).toISOString().split('T')[0];
+        const secondDayDate = new Date(day2.date).toISOString().split('T')[0];
+
+        const isTodayFirstDay = firstDayDate === today;
+        const isTomorrowFirstDay = new Date(firstDayDate).getTime() > new Date(today).getTime();
+
+        let leftDay, rightDay;
+        let leftDayLabel, rightDayLabel;
+
+        if (isTomorrowFirstDay) {
+            leftDay = day2;
+            rightDay = day1;
+            leftDayLabel = 'Yesterday\'s';
+            rightDayLabel = 'Tomorrow\'s';
+        } else {
+            leftDay = isTodayFirstDay ? day2 : day1;
+            rightDay = isTodayFirstDay ? day1 : day2;
+            leftDayLabel = isTodayFirstDay ? 'Yesterday\'s' : 'Today\'s';
+            rightDayLabel = isTodayFirstDay ? 'Today\'s' : 'Tomorrow\'s';
+        }
+
+        document.getElementById('left-day-label').textContent = leftDayLabel;
+        document.getElementById('right-day-label').textContent = rightDayLabel;
+
+        function createChart(ctx, dailyPrices, label) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: dailyPrices.length }, (_, i) => i),
+                    datasets: [{
+                        label: label,
+                        data: dailyPrices,
+                        borderColor: '#007BFF',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function() {
+                                    return 'Hour or Price'; // Customize the tooltip title
+                                },
+                                label: function(context) {
+                                    const hour = context.label.toString().padStart(2, '0'); // Ensure 2 digits for hour
+                                    const price = context.raw;   // Price at that hour
+                                    return `Hour: ${hour}:00, Price: ${price}`;
+                                }
+                            },
+                            titleFont: {
+                                size: 30
+                            },
+                            bodyFont: {
+                                size: 30
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Hour',
+                                font: {
+                                    size: 30
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    size: 25
+                                },
+                                callback: function(value) {
+                                    return `${value.toString().padStart(2, '0')}:00`; // Display hours in 4-digit format (00:00, 01:00, etc.)
+                                }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Price',
+                                font: {
+                                    size: 30
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    size: 25
+                                }
+                            }
                         }
                     }
                 }
-            },
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        fontSize: 20
-                    }
-                }],
-                xAxes: [{
-                    ticks: {
-                        fontSize: 15
-                    }
-                }]
-            }
-        },
-    };
-    Chart.defaults.global.defaultFontSize = 20;
-    var chart = new Chart(ctx, config);
-    
+            });
+        }
+        Chart.defaults.font.size = 30;
 
-</script>
+        // Create charts
+        createChart(document.getElementById('leftDayChart').getContext('2d'), leftDay.dailyPriceArray, leftDayLabel);
+        createChart(document.getElementById('rightDayChart').getContext('2d'), rightDay.dailyPriceArray, rightDayLabel);
+
+        // Function to create a summary box
+        function createSummaryBox(parentElement, idPrefix, label, value, extra_class = '') {
+            const box = document.createElement('div');
+            box.className = 'box';
+            if(extra_class){
+                box.className += ' ' + extra_class;
+            }
+            const title = document.createElement('p');
+            title.id = `${idPrefix}-title`;
+            title.className = idPrefix.split('-')[1];
+            title.textContent = label;
+
+            const data = document.createElement('p');
+            data.id = idPrefix;
+            data.textContent = value;
+
+            box.appendChild(title);
+            box.appendChild(data);
+
+            parentElement.appendChild(box);
+        }
+
+        // Function to create and populate summary data
+        function createSummaryData(parentElementId, dayData, dayLabel, side, extra_class = '') {
+            const parentElement = document.getElementById(parentElementId);
+            parentElement.innerHTML = ''; // Clear existing content
+            metrics.forEach(metric => {
+                const idPrefix = `${side}-${metric.name}`;
+                const label = `${dayLabel} ${metric.nickname}`;
+                const value = dayData[metric.name];
+                createSummaryBox(parentElement, idPrefix, label, value, extra_class);
+            });
+        }
+
+        // Create summary data for both days
+        createSummaryData('left-summary', leftDay, leftDayLabel, 'left');
+        createSummaryData('right-summary', rightDay, rightDayLabel, 'right', 'right-summary');
+    </script>
+</body>
+</html>

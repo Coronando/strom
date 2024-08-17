@@ -1,1 +1,4 @@
 config.json
+.env
+# Ignore json files with name starting with electricity_prices
+electricity_prices*.json
