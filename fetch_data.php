@@ -23,7 +23,7 @@ function savePricesToFile($data, $date) {
     return $fileName;
 }
 
-function getPricesForTodayAndTomorrow($apiKey) {
+function getUpdatedPrices($apiKey) {
     $today = date('Y-m-d');
     $tomorrow = date('Y-m-d', strtotime('tomorrow'));
 
@@ -31,7 +31,7 @@ function getPricesForTodayAndTomorrow($apiKey) {
     $tomorrowFileName = "electricity_prices_$tomorrow.json";
 
     // If we have passed midnight, the tomorrow data is now valid for today.
-    if (date('H') < 12) {
+    if (date('H') < 14) {
         // Check if yesterday's file exists
         $yesterday = date('Y-m-d', strtotime('yesterday'));
         $yesterdayFileName = "electricity_prices_$yesterday.json";
@@ -96,6 +96,6 @@ loadEnv(__DIR__ . '/.env');
 
 // Now you can access the API key using getenv()
 $apiKey = getenv('API_KEY');
-$prices = getPricesForTodayAndTomorrow($apiKey);
+$prices = getUpdatedPrices($apiKey);
 
 //print_r($prices);
